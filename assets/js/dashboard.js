@@ -3,14 +3,14 @@ function atualizarRelogio() {
   var agora = new Date();
   var data = agora.toLocaleDateString("pt-BR");
   var hora = agora.toLocaleTimeString("pt-BR");
-  document.getElementById("relogio").textContent = data + " " + hora;
+  document.getElementById("relogio").innerHTML = "<span style=\"color:#fff; font-size: 1.1em; margin-right: 4px;\">&#128338;</span> " + data + " " + hora;
 }
 setInterval(atualizarRelogio, 1000);
 atualizarRelogio();
 
 /* ===================== Clima (emoji, cache de 30min já é feito no servidor) ===================== */
 var EMOJI_CLIMA = {
-  thunder: "⛈️", drizzle: "🌦️", rain: "🌧️", snow: "❄️", mist: "🌫️", clear: "☀️", clouds: "☁️"
+  thunder: "&#9928;", drizzle: "&#127782;", rain: "&#127783;", snow: "&#10052;", mist: "&#127787;", clear: "&#9728;", clouds: "&#9729;"
 };
 function emojiParaCodigo(id) {
   if (id >= 200 && id < 300) return EMOJI_CLIMA.thunder;
@@ -32,7 +32,7 @@ async function carregarClima() {
     }
     var temp = Math.round(dados.main.temp);
     var emoji = emojiParaCodigo(dados.weather[0].id);
-    document.getElementById("clima").textContent = emoji + " " + temp + "°C - " + dados.weather[0].description;
+    document.getElementById("clima").innerHTML = emoji + " " + temp + "°C - " + dados.weather[0].description;
   } catch (e) {
     document.getElementById("clima").textContent = "Clima indisponível";
   }
@@ -107,16 +107,23 @@ function montarTabelaDesvios(lista) {
 // de data e sem deixar nenhum de fora — o que não coube aparece na próxima atualização.
 function exibirPaginaDesvios() {
   var container = document.getElementById("lista-desvios");
-  if (!desviosDisponiveis.length) {
-    container.innerHTML = "<p class=\"sem-dados\">Nenhum desvio neste mês.</p>";
+  // Filtra apenas os desvios relevantes (Grave e Resolvido) para manter foco nos problemas reais
+  var desviosFiltrados = desviosDisponiveis.filter(function(d) {
+    var isGrave = d.status === "grave" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("grave"));
+    var isResolvido = d.status === "resolvido" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"));
+    return isGrave || isResolvido;
+  });
+
+  if (!desviosFiltrados.length) {
+    container.innerHTML = "<p class=\"sem-dados\">Nenhum desvio relevante neste mês.</p>";
     return;
   }
-  var total = desviosDisponiveis.length;
+  var total = desviosFiltrados.length;
 
   function construirPagina(qtd) {
     var pagina = [];
     for (var i = 0; i < qtd; i++) {
-      pagina.push(desviosDisponiveis[(paginaDesvioAtual + i) % total]);
+      pagina.push(desviosFiltrados[(paginaDesvioAtual + i) % total]);
     }
     return pagina;
   }
@@ -137,6 +144,7 @@ async function carregarStatusQualidade() {
     montarPiramide(dados.status_dias || {});
     desviosDisponiveis = dados.desvios || [];
     if (paginaDesvioAtual >= desviosDisponiveis.length) { paginaDesvioAtual = 0; }
+    // A primeira exibição é chamada aqui, a rotação é feita por um setInterval dedicado
     exibirPaginaDesvios();
   } catch (e) {
     console.error("Erro ao carregar status da qualidade", e);
@@ -344,17 +352,19 @@ carregarIndicadores();
 carregarEmFormulacao();
 carregarClima();
 
-setInterval(carregarStatusQualidade, 30 * 1000);
-setInterval(carregarNoticias, 25 * 1000);
+setInterval(carregarStatusQualidade, 60 * 1000);
+setInterval(exibirPaginaDesvios, 30 * 1000);
+setInterval(exibirNoticiaAtual, 35 * 1000); // Roda a cada 35s, de acordo com o tempo da animação marquee no CSS
+setInterval(carregarNoticias, 5 * 60 * 1000); // Busca do feed apenas a cada 5 min
 setInterval(carregarMural, 30 * 1000);
 setInterval(carregarIndicadores, 20 * 1000);
 setInterval(carregarClima, 30 * 60 * 1000);
 
-// 15 seconds countdown indicator for table sync
-let secondsLeft = 15;
+// 30 seconds countdown indicator for table sync
+let secondsLeft = 30;
 const timerElement = document.getElementById('refresh-timer');
 setInterval(() => {
-  secondsLeft = secondsLeft <= 1 ? 15 : secondsLeft - 1;
+  secondsLeft = secondsLeft <= 1 ? 30 : secondsLeft - 1;
   if (timerElement) {
     timerElement.textContent = secondsLeft + 's';
   }

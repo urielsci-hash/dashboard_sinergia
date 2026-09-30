@@ -127,15 +127,26 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 
 .painel { font-size: clamp(14px, 1vw, 18px); }
 
-.painel .cabecalho { padding: clamp(12px, 1.6vw, 26px) clamp(16px, 2.4vw, 40px); align-items: center; justify-content: space-between; }
+.painel .cabecalho { padding: clamp(10px, 1.2vw, 20px) clamp(16px, 2.4vw, 40px); align-items: center; justify-content: space-between; }
+.painel .marca { display: flex; align-items: center; gap: 16px; }
+.painel .separador-cabecalho { width: 1px; height: 32px; background-color: rgba(255,255,255,0.2); }
 .painel .area-topo-direita { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 24px); flex-direction: row; }
-.painel .logo { height: clamp(36px, 4vw, 60px); }
-.painel .cabecalho h1 { font-size: clamp(18px, 2vw, 32px); font-weight: 700; letter-spacing: .2px; margin: 0; }
-.painel .cabecalho p { font-size: clamp(10px, 1vw, 14px); margin: 4px 0 0; }
-.painel .relogio { font-size: clamp(14px, 1.2vw, 20px); font-weight: 600; }
-.painel .clima { font-size: clamp(12px, 1.1vw, 18px); }
+.painel .info-topo { display: flex; align-items: center; gap: 24px; }
+.painel .logo { height: clamp(28px, 3.5vw, 48px); }
+.painel .cabecalho h1 { font-size: clamp(16px, 1.8vw, 28px); font-weight: 700; letter-spacing: .2px; margin: 0; }
+.painel .cabecalho p { font-size: clamp(10px, 1vw, 13px); margin: 2px 0 0; color: #a1b2c5; }
+.painel .relogio-box {
+  font-size: clamp(12px, 1.1vw, 16px);
+  font-weight: 600;
+  background-color: rgba(0,0,0,0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; gap: 6px;
+}
+.painel .clima { font-size: clamp(12px, 1.1vw, 16px); font-weight: 600; }
 
-.painel .conteudo { padding: clamp(12px, 1.6vw, 28px); padding-bottom: clamp(46px, 6vh, 80px); gap: clamp(12px, 1.4vw, 22px); }
+.painel .conteudo { padding: clamp(12px, 1.6vw, 24px); padding-bottom: clamp(46px, 6vh, 80px); gap: clamp(12px, 1.4vw, 22px); }
 .painel .cartao { padding: clamp(14px, 1.6vw, 26px); border-radius: clamp(8px, 0.8vw, 14px); }
 .painel .titulo-cartao { font-size: clamp(16px, 1.7vw, 26px); font-weight: 700; margin: 0 0 clamp(8px, 1vw, 16px); }
 .painel .rotulo { font-size: clamp(13px, 1.15vw, 18px); }
@@ -143,6 +154,8 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .painel .detalhe { font-size: clamp(13px, 1.1vw, 17px); }
 
 /* Calendário — reduzido ~10% em relação à v4 para abrir espaço para os desvios */
+.painel .status-header-centered { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: clamp(8px, 1vw, 16px); }
+.painel .status-header-centered h2 { margin-bottom: 4px; }
 .painel .mes-ano-piramide { font-size: clamp(13px, 1.3vw, 18px); font-weight: 600; color: var(--azul-marca-escuro); }
 .painel .piramide { gap: clamp(4px, 0.6vw, 10px); }
 .painel .dia-piramide {
@@ -154,7 +167,7 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 }
 
 /* Legenda: cores tem que bater exatamente com as do calendário */
-.painel .legenda-status { font-size: clamp(12px, 1.05vw, 16px); gap: clamp(10px, 1.4vw, 22px); }
+.painel .legenda-status { font-size: clamp(12px, 1.05vw, 16px); gap: clamp(10px, 1.4vw, 22px); justify-content: center; }
 .painel .bolinha { width: clamp(10px, 1vw, 14px); height: clamp(10px, 1vw, 14px); }
 .painel .bolinha-ok { background: var(--verde-ok); }
 .painel .bolinha-atencao { background: var(--amarelo-alerta); }
@@ -212,12 +225,12 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
   border-right: 2px solid var(--azul-marca-escuro);
   padding-right: 16px;
 }
-.painel .rodape-noticias .noticias-lista { flex: 1; overflow: hidden; white-space: nowrap; }
+.painel .rodape-noticias .noticias-lista { flex: 1; overflow: hidden; white-space: nowrap; position: relative; }
 
 .painel .noticia-item { font-size: clamp(12px, 1.05vw, 15px); display: inline-block; vertical-align: middle; }
-.painel .noticia-item-container { display: inline-block; animation: marquee 35s linear infinite; }
+.painel .noticia-item-container { display: inline-block; position: absolute; white-space: nowrap; animation: marquee 35s linear infinite; }
 @keyframes marquee {
-  0% { transform: translateX(100%); }
+  0% { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
 }
 .painel .noticia-item a { color: var(--azul-marca); text-decoration: none; font-weight: 600; margin-right: 8px;}
@@ -232,16 +245,16 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: contain; width: 100%; height: 100%; display: block; margin: auto; }
 
 /* Em formulação: destaque maior para os números, layout vertical com barra de progresso */
-.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 24px); height: 100%; justify-content: space-between; }
+.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(8px, 1.2vw, 16px); height: 100%; justify-content: space-between; }
 .painel .producao-vertical .prod-item { margin-bottom: 0; }
-.painel .producao-vertical .valor { font-size: clamp(24px, 3vw, 40px); line-height: 1.1; margin-top: 4px; color: #111; font-weight: 800; }
+.painel .producao-vertical .valor { font-size: clamp(20px, 2.5vw, 32px); line-height: 1.1; margin-top: 4px; color: #111; font-weight: 800; }
 .painel .flex-between { display: flex; justify-content: space-between; align-items: baseline; }
-.painel .percent-badge { color: var(--verde-ok); font-weight: 700; font-size: clamp(12px, 1vw, 16px); }
-.painel .progress-bar-bg { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-.painel .progress-bar-fill { height: 100%; background: var(--verde-ok); border-radius: 4px; transition: width 0.5s ease; }
+.painel .percent-badge { color: var(--verde-ok); font-weight: 700; font-size: clamp(12px, 1vw, 14px); }
+.painel .progress-bar-bg { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.painel .progress-bar-fill { height: 100%; background: var(--verde-ok); border-radius: 3px; transition: width 0.5s ease; }
 
-.painel .lista-tanques { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: clamp(10px, 1.2vw, 16px); background: #fafbfc; border-radius: 8px; border: 1px solid #eceff2; }
-.painel .lista-tanques-item { display: flex; justify-content: space-between; font-size: clamp(12px, 1.05vw, 15px); color: #555; }
+.painel .lista-tanques { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: clamp(8px, 1vw, 12px); background: #fafbfc; border-radius: 8px; border: 1px solid #eceff2; }
+.painel .lista-tanques-item { display: flex; justify-content: space-between; font-size: clamp(11px, 0.95vw, 14px); color: #555; }
 .painel .lista-tanques-item span:last-child { font-weight: 700; color: #333; }
 
 .painel .rodape-producao { display: flex; justify-content: space-between; align-items: center; font-size: clamp(10px, 0.85vw, 13px); color: #999; margin-top: auto; padding-top: 12px; }
@@ -253,4 +266,13 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
   .painel .conteudo section:nth-child(n) { grid-column: 1; grid-row: auto; }
   .painel .cartao { min-height: 240px; }
 }
-.painel .cartao-status { overflow-y: auto; }
+
+/* Evitar scroll em todas as telas grandes */
+@media (min-width: 901px) {
+  .painel .cartao-status { overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.2vw, 16px); }
+  .painel .cartao-status .piramide { justify-content: center; }
+  .painel .cartao-desvios { overflow: hidden; }
+  .painel .lista-desvios { overflow: hidden; }
+  .painel .cartao-producao { overflow: hidden; }
+  .painel .cartao-mural { overflow: hidden; }
+}
