@@ -78,7 +78,7 @@ function linhaDesvioHtml(d) {
   if (d.status === "grave" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("grave"))) {
     classeLinha = "linha-grave";
     badgeHtml = "<span style=\"display:inline-block; margin-left:8px; padding:2px 6px; font-size:9px; font-weight:bold; background-color:#ffebeb; color:#d32f2f; border-radius:4px;\">Grave</span>";
-  } else if (d.status === "resolvido" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"))) {
+  } else if (d.status === "atencao" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"))) {
     classeLinha = "linha-resolvido";
     badgeHtml = "<span style=\"display:inline-block; margin-left:8px; padding:2px 6px; font-size:9px; font-weight:bold; background-color:#fff8e1; color:#f57f17; border-radius:4px;\">Resolvido</span>";
   } else if (d.observacao && d.observacao.toLowerCase().includes("auditoria")) {
@@ -110,7 +110,7 @@ function exibirPaginaDesvios() {
   // Filtra apenas os desvios relevantes (Grave e Resolvido) para manter foco nos problemas reais
   var desviosFiltrados = desviosDisponiveis.filter(function(d) {
     var isGrave = d.status === "grave" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("grave"));
-    var isResolvido = d.status === "resolvido" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"));
+    var isResolvido = d.status === "atencao" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"));
     return isGrave || isResolvido;
   });
 

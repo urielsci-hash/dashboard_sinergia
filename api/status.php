@@ -28,7 +28,7 @@ foreach ($stmt->fetchAll() as $linha) {
 // Agora lemos direto da tabela unificada status_qualidade_dia.
 // Precisamos trazer o registro *mais recente* de cada dia para saber se o desvio final daquele dia é válido.
 $stmt = $pdo->prepare("
-    SELECT s.data, s.desvio AS descricao_desvio, s.acao_tomada, s.como_evitar, s.observacao
+    SELECT s.data, s.status, s.desvio AS descricao_desvio, s.acao_tomada, s.como_evitar, s.observacao
     FROM status_qualidade_dia s
     INNER JOIN (
         SELECT data, MAX(criado_em) AS max_criado
