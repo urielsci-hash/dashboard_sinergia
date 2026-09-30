@@ -37,7 +37,7 @@ $stmt = $pdo->prepare("
         GROUP BY data
     ) max_s ON s.data = max_s.data AND s.criado_em = max_s.max_criado
     WHERE s.status IN ('atencao', 'grave') AND s.desvio IS NOT NULL AND s.desvio != ''
-    ORDER BY s.data ASC, s.id ASC
+    ORDER BY s.data DESC, s.id DESC
 ");
 $stmt->execute([$mesAtual . "-%"]);
 $desvios = $stmt->fetchAll();
