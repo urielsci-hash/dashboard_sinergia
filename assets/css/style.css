@@ -128,16 +128,6 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 
 .painel .cabecalho { padding: clamp(12px, 1.6vw, 26px) clamp(16px, 2.4vw, 40px); align-items: flex-start; }
 .painel .area-topo-direita { display: flex; flex-direction: column; align-items: flex-end; gap: clamp(6px, 0.8vw, 12px); }
-.painel .caixa-noticias-cabecalho {
-  background: #fff;
-  color: var(--cinza-texto);
-  border-radius: clamp(8px, 0.8vw, 14px);
-  padding: clamp(8px, 1vw, 14px) clamp(12px, 1.4vw, 20px);
-  min-width: clamp(220px, 22vw, 420px);
-  max-width: 46vw;
-}
-.painel .caixa-noticias-cabecalho .titulo-cartao { margin-bottom: clamp(4px, 0.6vw, 8px); }
-.painel .caixa-noticias-cabecalho .noticias-lista { max-height: clamp(60px, 8vh, 110px); overflow: hidden; }
 .painel .logo { height: clamp(36px, 4vw, 60px); }
 .painel .cabecalho h1 { font-size: clamp(22px, 2.6vw, 40px); font-weight: 700; letter-spacing: .2px; }
 .painel .cabecalho p { font-size: clamp(12px, 1.1vw, 18px); }
@@ -145,9 +135,9 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .painel .relogio { font-size: clamp(18px, 2vw, 30px); font-weight: 600; }
 .painel .clima { font-size: clamp(14px, 1.3vw, 20px); }
 
-.painel .conteudo { padding: clamp(12px, 1.6vw, 28px); gap: clamp(12px, 1.4vw, 22px); }
+.painel .conteudo { padding: clamp(12px, 1.6vw, 28px); padding-bottom: clamp(46px, 6vh, 80px); gap: clamp(12px, 1.4vw, 22px); }
 .painel .cartao { padding: clamp(14px, 1.6vw, 26px); border-radius: clamp(8px, 0.8vw, 14px); }
-.painel .titulo-cartao { font-size: clamp(18px, 1.9vw, 28px); font-weight: 700; margin: 0 0 clamp(8px, 1vw, 16px); }
+.painel .titulo-cartao { font-size: clamp(16px, 1.7vw, 26px); font-weight: 700; margin: 0 0 clamp(8px, 1vw, 16px); }
 .painel .rotulo { font-size: clamp(13px, 1.15vw, 18px); }
 .painel .valor { font-size: clamp(26px, 3.4vw, 46px); }
 .painel .detalhe { font-size: clamp(13px, 1.1vw, 17px); }
@@ -175,7 +165,7 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .tabela-desvios-dash { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(11px, 0.95vw, 15px); }
 .tabela-desvios-dash th, .tabela-desvios-dash td {
   text-align: left;
-  padding: clamp(4px, 0.5vw, 8px) clamp(4px, 0.6vw, 10px);
+  padding: clamp(2px, 0.3vw, 6px) clamp(4px, 0.6vw, 10px);
   border-bottom: 1px solid #eceff2;
   vertical-align: top;
   overflow: hidden;
@@ -185,22 +175,48 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .tabela-desvios-dash td.col-data { white-space: nowrap; width: 1%; }
 
 /* Últimas notícias (RSS) */
-.painel .noticias-lista { margin-top: clamp(6px, 1vw, 14px); overflow: hidden; }
-.noticia-item { font-size: clamp(12px, 1.05vw, 16px); }
-.noticia-item a { color: var(--azul-marca); text-decoration: none; font-weight: 600; }
-.noticia-item a:hover { text-decoration: underline; }
-.noticia-item p { margin: 4px 0 0; color: #666; overflow-wrap: break-word; }
+.painel .rodape-noticias {
+  background: #fff;
+  color: var(--cinza-texto);
+  padding: 8px 16px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 100;
+  height: clamp(30px, 4vh, 46px);
+}
+.painel .rodape-noticias .rodape-noticias-titulo {
+  font-weight: 700;
+  font-size: clamp(12px, 1.1vw, 15px);
+  color: var(--azul-marca-escuro);
+  white-space: nowrap;
+  border-right: 2px solid var(--azul-marca-escuro);
+  padding-right: 16px;
+}
+.painel .rodape-noticias .noticias-lista { flex: 1; overflow: hidden; white-space: nowrap; }
+
+.painel .noticia-item { font-size: clamp(12px, 1.05vw, 15px); display: inline-block; vertical-align: middle; }
+.painel .noticia-item a { color: var(--azul-marca); text-decoration: none; font-weight: 600; margin-right: 8px;}
+.painel .noticia-item a:hover { text-decoration: underline; }
+.painel .noticia-item p { display: inline; color: #666; font-size: 0.95em; }
 
 /* Mural: se a imagem estiver quebrada, cai para exibir só o título (sem ícone de erro) */
 .painel .mural-item img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 .mural-item.sem-imagem { justify-content: center; }
+.cartao.cartao-mural.mural-fullscreen { padding: 0; border-radius: clamp(8px, 0.8vw, 14px); }
+.cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: cover; width: 100%; height: 100%; }
 
-/* Em formulação: destaque maior para os números */
-.painel .producao-total { gap: clamp(16px, 2.4vw, 40px); }
-.painel .producao-total .valor { font-size: clamp(28px, 3.6vw, 48px); }
-.painel .producao-tanques { gap: clamp(10px, 1.4vw, 20px); }
-.painel .tanque { padding: clamp(8px, 1vw, 16px) clamp(12px, 1.4vw, 20px); font-size: clamp(13px, 1.1vw, 17px); min-width: clamp(90px, 9vw, 140px); }
-.painel .tanque .tanque-produto { font-size: clamp(11px, 0.95vw, 14px); }
+/* Em formulação: destaque maior para os números, layout vertical */
+.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(10px, 1.4vw, 20px); }
+.painel .producao-vertical .prod-item { margin-bottom: 0; }
+.painel .producao-vertical .valor { font-size: clamp(28px, 3.6vw, 48px); line-height: 1.1; margin-top: 4px; }
+.painel .lista-tanques { display: flex; flex-direction: column; gap: 4px; padding-left: 20px; list-style-type: disc; margin: 0; color: #555; }
+.painel .lista-tanques li { font-size: clamp(12px, 1.05vw, 16px); padding-left: 4px; }
 
 /* Telas bem estreitas (tablet retrato/celular): empilha tudo em 1 coluna */
 @media (max-width: 900px) {

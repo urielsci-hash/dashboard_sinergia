@@ -161,15 +161,31 @@ var muralIndice = 0;
 
 function exibirMuralAtual() {
   var container = document.getElementById("mural-item");
+  var cardMural = document.getElementById("mural");
+  var tituloMural = document.getElementById("titulo-mural-card");
+
   if (!muralItens.length) {
     container.innerHTML = "<p class=\"sem-dados\">Sem comunicados no momento.</p>";
     return;
   }
   var item = muralItens[muralIndice % muralItens.length];
+
+  // Limpa classes extras antes de renderizar o novo item
+  cardMural.classList.remove("mural-fullscreen");
+  if (tituloMural) {
+    tituloMural.style.display = "block";
+    tituloMural.classList.remove("discreto");
+  }
+
   if (item.tipo === "imagem") {
     container.className = "mural-item";
     container.innerHTML = "<img src=\"uploads/mural/" + item.imagem_path + "\" alt=\"" + escaparHtml(item.titulo) +
       "\" onerror=\"this.parentElement.innerHTML='<p class=&quot;titulo-mural&quot;>' + this.alt + '</p>';\">";
+
+    if (tituloMural) {
+        tituloMural.style.display = "none";
+    }
+    cardMural.classList.add("mural-fullscreen");
   } else {
     container.className = "mural-item sem-imagem";
     container.innerHTML = "<p class=\"titulo-mural\">" + escaparHtml(item.titulo) + "</p><p>" + escaparHtml(item.conteudo) + "</p>";
@@ -268,13 +284,15 @@ function montarProducao(producao, tanques) {
     return;
   }
   var linhasTanques = tanques.map(function (t) {
-    var produto = t.produto ? "<span class=\"tanque-produto\">" + escaparHtml(t.produto) + "</span>" : "";
-    return "<div class=\"tanque\"><span>" + t.tanque + "</span>" + produto + "<strong>" + t.valor_litros + " L</strong></div>";
+    var produto = t.produto ? " " + escaparHtml(t.produto) : "";
+    return "<li>" + escaparHtml(t.tanque) + produto + " - " + escaparHtml(t.valor_litros) + " L</li>";
   }).join("");
   el.innerHTML =
-    "<div class=\"producao-total\"><div><p class=\"rotulo\">Armazenamento utilizado</p><p class=\"valor\">" + producao.armazenamento_utilizado_litros + " L</p></div>" +
-    "<div><p class=\"rotulo\">Capacidade total</p><p class=\"valor\">" + producao.capacidade_total_litros + " L</p></div></div>" +
-    "<div class=\"producao-tanques\">" + linhasTanques + "</div>";
+    "<div class=\"producao-vertical\">" +
+    "<div class=\"prod-item\"><p class=\"rotulo\">Capacidade total de armazenamento</p><p class=\"valor\">" + producao.capacidade_total_litros + " L</p></div>" +
+    "<div class=\"prod-item\"><p class=\"rotulo\">Armazenamento utilizado</p><p class=\"valor\">" + producao.armazenamento_utilizado_litros + " L</p></div>" +
+    "<ul class=\"lista-tanques\">" + linhasTanques + "</ul>" +
+    "</div>";
 }
 
 async function carregarEmFormulacao() {
@@ -297,7 +315,7 @@ carregarIndicadores();
 carregarEmFormulacao();
 carregarClima();
 
-setInterval(carregarStatusQualidade, 35 * 1000);
+setInterval(carregarStatusQualidade, 30 * 1000);
 setInterval(carregarNoticias, 25 * 1000);
 setInterval(carregarMural, 30 * 1000);
 setInterval(carregarIndicadores, 20 * 1000);

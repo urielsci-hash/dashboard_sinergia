@@ -26,10 +26,6 @@ exigirLogin();
         <div id="relogio" class="relogio">--:--:--</div>
         <div id="clima" class="clima">Carregando clima...</div>
       </div>
-      <div class="caixa-noticias-cabecalho">
-        <h2 class="titulo-cartao">Últimas notícias</h2>
-        <div id="noticias-lista" class="noticias-lista"></div>
-      </div>
     </div>
   </header>
 
@@ -50,7 +46,7 @@ exigirLogin();
     <section class="cartao cartao-indicador"><canvas id="grafico-indicador-0"></canvas></section>
     <section class="cartao cartao-indicador"><canvas id="grafico-indicador-1"></canvas></section>
     <section class="cartao cartao-mural" id="mural">
-      <h2 class="titulo-cartao">Mural</h2>
+      <h2 class="titulo-cartao" id="titulo-mural-card">Mural</h2>
       <div id="mural-item" class="mural-item">Carregando comunicados...</div>
     </section>
 
@@ -60,6 +56,11 @@ exigirLogin();
       <div id="producao-conteudo">Carregando...</div>
     </section>
   </main>
+
+  <footer class="rodape-noticias">
+    <div class="rodape-noticias-titulo">Últimas notícias</div>
+    <div id="noticias-lista" class="noticias-lista"></div>
+  </footer>
 
   <script src="assets/js/dashboard.js"></script>
 </body>
