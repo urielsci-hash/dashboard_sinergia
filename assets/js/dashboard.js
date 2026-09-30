@@ -114,6 +114,8 @@ function exibirPaginaDesvios() {
     return isGrave || isResolvido;
   });
 
+  desviosFiltrados.sort(function(a, b) { return new Date(b.data + "T00:00:00") - new Date(a.data + "T00:00:00"); });
+
   if (!desviosFiltrados.length) {
     container.innerHTML = "<p class=\"sem-dados\">Nenhum desvio relevante neste mês.</p>";
     return;
@@ -128,13 +130,12 @@ function exibirPaginaDesvios() {
     return pagina;
   }
 
-  var quantidade = total;
+  var quantidade = Math.min(3, total);
   container.innerHTML = montarTabelaDesvios(construirPagina(quantidade));
-  while (quantidade > 1 && container.scrollHeight > container.clientHeight + 2) {
-    quantidade--;
-    container.innerHTML = montarTabelaDesvios(construirPagina(quantidade));
+  paginaDesvioAtual = paginaDesvioAtual + quantidade;
+  if (paginaDesvioAtual >= total) {
+    paginaDesvioAtual = 0;
   }
-  paginaDesvioAtual = (paginaDesvioAtual + quantidade) % total;
 }
 
 async function carregarStatusQualidade() {
