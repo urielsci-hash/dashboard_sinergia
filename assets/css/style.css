@@ -65,13 +65,14 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 
 /* --- v2: pirâmide, indicadores dinâmicos, produção por tanque --- */
 
-.conteudo { grid-template-columns: 1.3fr 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
-.conteudo section:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+.conteudo { grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.conteudo section:nth-child(1) { grid-column: 1; grid-row: 1; }
 .conteudo section:nth-child(2) { grid-column: 2; grid-row: 1; }
 .conteudo section:nth-child(3) { grid-column: 3; grid-row: 1; }
 .conteudo section:nth-child(4) { grid-column: 4; grid-row: 1; }
-.conteudo section:nth-child(5) { grid-column: 2; grid-row: 2; }
-.conteudo section:nth-child(6) { grid-column: 3 / span 2; grid-row: 2; }
+.conteudo section:nth-child(5) { grid-column: 1 / span 2; grid-row: 2; }
+.conteudo section:nth-child(6) { grid-column: 3; grid-row: 2; }
+.conteudo section:nth-child(7) { grid-column: 4; grid-row: 2; }
 
 .cartao { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; flex-direction: column; overflow: hidden; }
 .titulo-cartao { margin: 0 0 10px; font-size: 14px; color: var(--azul-marca-escuro); }
@@ -159,19 +160,33 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .painel .bolinha-atencao { background: var(--amarelo-alerta); }
 .painel .bolinha-grave { background: var(--vermelho-alerta); }
 
-/* Desvios de qualidade: um registro por vez, rotativo, com rótulos claros */
-.painel .lista-desvios { margin-top: clamp(8px, 1vw, 14px); }
-.tabela-desvios-dash { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(11px, 0.95vw, 15px); }
+/* Desvios de qualidade: layout e cores baseados no mockup */
+.painel .cabecalho-desvios { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eceff2; padding-bottom: clamp(6px, 1vw, 10px); margin-bottom: clamp(8px, 1vw, 16px); }
+.painel .desvios-titulo-badge { display: flex; align-items: center; gap: 8px; }
+.painel .desvios-titulo-badge h2 { margin: 0; }
+.painel .badge-registros-ativos { font-size: clamp(9px, 0.8vw, 12px); font-weight: 700; text-transform: uppercase; background: #fff0f0; color: #d32f2f; padding: 2px 8px; border-radius: 4px; border: 1px solid #f4c2c2; }
+.painel .desvios-refresh { font-size: clamp(10px, 0.9vw, 13px); color: #888; display: flex; align-items: center; gap: 6px; }
+.painel .pulse-dot { width: 8px; height: 8px; background-color: var(--verde-ok); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+
+.painel .lista-desvios { flex: 1; overflow-x: auto; }
+.tabela-desvios-dash { width: 100%; border-collapse: separate; border-spacing: 0; font-size: clamp(11px, 0.95vw, 15px); min-width: 600px; }
 .tabela-desvios-dash th, .tabela-desvios-dash td {
   text-align: left;
-  padding: clamp(2px, 0.3vw, 6px) clamp(4px, 0.6vw, 10px);
+  padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 14px);
   border-bottom: 1px solid #eceff2;
-  vertical-align: top;
-  overflow: hidden;
-  overflow-wrap: break-word;
+  vertical-align: middle;
 }
-.tabela-desvios-dash th { color: #888; font-weight: 600; white-space: normal; }
-.tabela-desvios-dash td.col-data { white-space: nowrap; width: 1%; }
+.tabela-desvios-dash th { color: #999; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+.tabela-desvios-dash td.col-data { white-space: nowrap; font-weight: 600; }
+.tabela-desvios-dash tr.linha-grave { background-color: #fffafa; }
+.tabela-desvios-dash tr.linha-grave td.col-data { color: var(--vermelho-alerta); }
+.tabela-desvios-dash tr.linha-resolvido { background-color: #fffdf5; }
+.tabela-desvios-dash tr.linha-resolvido td.col-data { color: var(--amarelo-alerta); }
+.tabela-desvios-dash tr.linha-neutro { background-color: #fafbfc; }
+.tabela-desvios-dash tr.linha-neutro td.col-data { color: #666; }
+
+.painel .rodape-desvios { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eceff2; padding-top: clamp(6px, 1vw, 10px); margin-top: clamp(8px, 1vw, 16px); font-size: clamp(10px, 0.85vw, 13px); color: #999; }
 
 /* Últimas notícias (RSS) */
 .painel .rodape-noticias {
@@ -216,12 +231,21 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .cartao.cartao-mural.mural-fullscreen .mural-item { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: contain; width: 100%; height: 100%; display: block; margin: auto; }
 
-/* Em formulação: destaque maior para os números, layout vertical */
-.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(10px, 1.4vw, 20px); }
+/* Em formulação: destaque maior para os números, layout vertical com barra de progresso */
+.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 24px); height: 100%; justify-content: space-between; }
 .painel .producao-vertical .prod-item { margin-bottom: 0; }
-.painel .producao-vertical .valor { font-size: clamp(28px, 3.6vw, 48px); line-height: 1.1; margin-top: 4px; }
-.painel .lista-tanques { display: flex; flex-direction: column; gap: 4px; padding-left: 20px; list-style-type: disc; margin: 0; color: #555; }
-.painel .lista-tanques li { font-size: clamp(12px, 1.05vw, 16px); padding-left: 4px; }
+.painel .producao-vertical .valor { font-size: clamp(24px, 3vw, 40px); line-height: 1.1; margin-top: 4px; color: #111; font-weight: 800; }
+.painel .flex-between { display: flex; justify-content: space-between; align-items: baseline; }
+.painel .percent-badge { color: var(--verde-ok); font-weight: 700; font-size: clamp(12px, 1vw, 16px); }
+.painel .progress-bar-bg { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.painel .progress-bar-fill { height: 100%; background: var(--verde-ok); border-radius: 4px; transition: width 0.5s ease; }
+
+.painel .lista-tanques { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: clamp(10px, 1.2vw, 16px); background: #fafbfc; border-radius: 8px; border: 1px solid #eceff2; }
+.painel .lista-tanques-item { display: flex; justify-content: space-between; font-size: clamp(12px, 1.05vw, 15px); color: #555; }
+.painel .lista-tanques-item span:last-child { font-weight: 700; color: #333; }
+
+.painel .rodape-producao { display: flex; justify-content: space-between; align-items: center; font-size: clamp(10px, 0.85vw, 13px); color: #999; margin-top: auto; padding-top: 12px; }
+.painel .rodape-producao .pulse-dot { width: 6px; height: 6px; }
 
 /* Telas bem estreitas (tablet retrato/celular): empilha tudo em 1 coluna */
 @media (max-width: 900px) {

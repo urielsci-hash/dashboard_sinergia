@@ -71,12 +71,29 @@ function escaparHtml(texto) {
 
 function linhaDesvioHtml(d) {
   var dataFormatada = new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR");
-  return "<tr>" +
-    "<td class=\"col-data\">" + dataFormatada + "</td>" +
+
+  var classeLinha = "linha-neutro";
+  var badgeHtml = "";
+
+  if (d.status === "grave" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("grave"))) {
+    classeLinha = "linha-grave";
+    badgeHtml = "<span style=\"display:inline-block; margin-left:8px; padding:2px 6px; font-size:9px; font-weight:bold; background-color:#ffebeb; color:#d32f2f; border-radius:4px;\">Grave</span>";
+  } else if (d.status === "resolvido" || (!d.status && d.observacao && d.observacao.toLowerCase().includes("resolvido"))) {
+    classeLinha = "linha-resolvido";
+    badgeHtml = "<span style=\"display:inline-block; margin-left:8px; padding:2px 6px; font-size:9px; font-weight:bold; background-color:#fff8e1; color:#f57f17; border-radius:4px;\">Resolvido</span>";
+  } else if (d.observacao && d.observacao.toLowerCase().includes("auditoria")) {
+    badgeHtml = "<span style=\"display:inline-block; margin-left:8px; padding:2px 6px; font-size:9px; font-weight:bold; background-color:#f0f0f0; color:#555; border-radius:4px;\">Auditoria</span>";
+  }
+
+  var dotColor = classeLinha === "linha-grave" ? "var(--vermelho-alerta)" : (classeLinha === "linha-resolvido" ? "var(--amarelo-alerta)" : "#999");
+  var dotHtml = "<span style=\"display:inline-block; width:6px; height:6px; border-radius:50%; background-color:" + dotColor + "; margin-right:6px; vertical-align:middle;\"></span>";
+
+  return "<tr class=\"" + classeLinha + "\">" +
+    "<td class=\"col-data\">" + dotHtml + dataFormatada + "</td>" +
     "<td>" + escaparHtml(d.descricao_desvio) + "</td>" +
     "<td>" + escaparHtml(d.acao_tomada) + "</td>" +
     "<td>" + escaparHtml(d.como_evitar) + "</td>" +
-    "<td>" + (d.observacao ? escaparHtml(d.observacao) : "—") + "</td>" +
+    "<td>" + (d.observacao ? escaparHtml(d.observacao) : "—") + badgeHtml + "</td>" +
     "</tr>";
 }
 
@@ -283,15 +300,27 @@ function montarProducao(producao, tanques) {
     el.innerHTML = "<p class=\"sem-dados\">Sem lançamento hoje.</p>";
     return;
   }
+  var total = parseFloat(producao.capacidade_total_litros) || 1;
+  var utilizado = parseFloat(producao.armazenamento_utilizado_litros) || 0;
+  var percentual = Math.min(100, Math.max(0, Math.round((utilizado / total) * 100)));
+
   var linhasTanques = tanques.map(function (t) {
     var produto = t.produto ? " " + escaparHtml(t.produto) : "";
-    return "<li>" + escaparHtml(t.tanque) + produto + " - " + escaparHtml(t.valor_litros) + " L</li>";
+    return "<div class=\"lista-tanques-item\"><span>" + escaparHtml(t.tanque) + produto + "</span><span>" + escaparHtml(t.valor_litros) + " L</span></div>";
   }).join("");
+
   el.innerHTML =
     "<div class=\"producao-vertical\">" +
+    "<div>" +
     "<div class=\"prod-item\"><p class=\"rotulo\">Capacidade total de armazenamento</p><p class=\"valor\">" + producao.capacidade_total_litros + " L</p></div>" +
-    "<div class=\"prod-item\"><p class=\"rotulo\">Armazenamento utilizado</p><p class=\"valor\">" + producao.armazenamento_utilizado_litros + " L</p></div>" +
-    "<ul class=\"lista-tanques\">" + linhasTanques + "</ul>" +
+    "<div class=\"prod-item\" style=\"margin-top: clamp(8px, 1.2vw, 16px);\"><div class=\"flex-between\"><p class=\"rotulo\">Armazenamento utilizado</p><span class=\"percent-badge\">" + percentual + "%</span></div><p class=\"valor\">" + producao.armazenamento_utilizado_litros + " L</p>" +
+    "<div class=\"progress-bar-bg\"><div class=\"progress-bar-fill\" style=\"width: " + percentual + "%;\"></div></div>" +
+    "</div>" +
+    "</div>" +
+    "<div>" +
+    "<div class=\"lista-tanques\">" + linhasTanques + "</div>" +
+    "<div class=\"rodape-producao\"><span>Tanques em Operação Ativa</span><span class=\"pulse-dot\"></span></div>" +
+    "</div>" +
     "</div>";
 }
 
@@ -320,6 +349,16 @@ setInterval(carregarNoticias, 25 * 1000);
 setInterval(carregarMural, 30 * 1000);
 setInterval(carregarIndicadores, 20 * 1000);
 setInterval(carregarClima, 30 * 60 * 1000);
+
+// 15 seconds countdown indicator for table sync
+let secondsLeft = 15;
+const timerElement = document.getElementById('refresh-timer');
+setInterval(() => {
+  secondsLeft = secondsLeft <= 1 ? 15 : secondsLeft - 1;
+  if (timerElement) {
+    timerElement.textContent = secondsLeft + 's';
+  }
+}, 1000);
 
 // Refresh completo da página a cada 5 minutos — garante que qualquer coisa nova cadastrada em
 // qualquer painel apareça, mesmo que fuja do que os fetches acima já cobrem, e evita qualquer
