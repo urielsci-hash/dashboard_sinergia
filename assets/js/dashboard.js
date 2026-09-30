@@ -1,0 +1,311 @@
+/* ===================== Relógio (data + hora) ===================== */
+function atualizarRelogio() {
+  var agora = new Date();
+  var data = agora.toLocaleDateString("pt-BR");
+  var hora = agora.toLocaleTimeString("pt-BR");
+  document.getElementById("relogio").textContent = data + " " + hora;
+}
+setInterval(atualizarRelogio, 1000);
+atualizarRelogio();
+
+/* ===================== Clima (emoji, cache de 30min já é feito no servidor) ===================== */
+var EMOJI_CLIMA = {
+  thunder: "⛈️", drizzle: "🌦️", rain: "🌧️", snow: "❄️", mist: "🌫️", clear: "☀️", clouds: "☁️"
+};
+function emojiParaCodigo(id) {
+  if (id >= 200 && id < 300) return EMOJI_CLIMA.thunder;
+  if (id >= 300 && id < 400) return EMOJI_CLIMA.drizzle;
+  if (id >= 500 && id < 600) return EMOJI_CLIMA.rain;
+  if (id >= 600 && id < 700) return EMOJI_CLIMA.snow;
+  if (id >= 700 && id < 800) return EMOJI_CLIMA.mist;
+  if (id === 800) return EMOJI_CLIMA.clear;
+  if (id > 800) return EMOJI_CLIMA.clouds;
+  return "🌡️";
+}
+async function carregarClima() {
+  try {
+    var resposta = await fetch("api/clima");
+    var dados = await resposta.json();
+    if (dados.erro || !dados.main) {
+      document.getElementById("clima").textContent = "Clima indisponível";
+      return;
+    }
+    var temp = Math.round(dados.main.temp);
+    var emoji = emojiParaCodigo(dados.weather[0].id);
+    document.getElementById("clima").textContent = emoji + " " + temp + "°C - " + dados.weather[0].description;
+  } catch (e) {
+    document.getElementById("clima").textContent = "Clima indisponível";
+  }
+}
+
+/* ===================== Status da qualidade (calendário + desvios) — a cada 35s ===================== */
+var desviosDisponiveis = [];
+var paginaDesvioAtual = 0;
+
+function montarPiramide(statusDias) {
+  var container = document.getElementById("piramide");
+  var agora = new Date();
+  var hoje = agora.getDate();
+  var diasNoMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
+
+  var rotuloMesAno = document.getElementById("mes-ano-piramide");
+  if (rotuloMesAno) {
+    rotuloMesAno.textContent = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }
+
+  var html = "";
+  for (var dia = 1; dia <= diasNoMes; dia++) {
+    var status = statusDias[dia] || "vazio";
+    var classeStatus = status === "vazio" ? "" : " status-dia-" + status;
+    var destaque = dia === hoje ? " dia-hoje" : "";
+    html += "<span class=\"dia-piramide" + classeStatus + destaque + "\">" + dia + "</span>";
+  }
+  container.innerHTML = html;
+}
+
+function escaparHtml(texto) {
+  var div = document.createElement("div");
+  div.textContent = texto || "";
+  return div.innerHTML;
+}
+
+function linhaDesvioHtml(d) {
+  var dataFormatada = new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR");
+  return "<tr>" +
+    "<td class=\"col-data\">" + dataFormatada + "</td>" +
+    "<td>" + escaparHtml(d.descricao_desvio) + "</td>" +
+    "<td>" + escaparHtml(d.acao_tomada) + "</td>" +
+    "<td>" + escaparHtml(d.como_evitar) + "</td>" +
+    "<td>" + (d.observacao ? escaparHtml(d.observacao) : "—") + "</td>" +
+    "</tr>";
+}
+
+function montarTabelaDesvios(lista) {
+  return "<table class=\"tabela-desvios-dash\"><thead><tr>" +
+    "<th>Data</th><th>Desvio</th><th>Ação tomada</th><th>Como evitar reincidência?</th><th>Observação</th>" +
+    "</tr></thead><tbody>" + lista.map(linhaDesvioHtml).join("") + "</tbody></table>";
+}
+
+// Mostra quantos desvios couberem no espaço do card (nunca menos de 1), sempre em sequência
+// de data e sem deixar nenhum de fora — o que não coube aparece na próxima atualização.
+function exibirPaginaDesvios() {
+  var container = document.getElementById("lista-desvios");
+  if (!desviosDisponiveis.length) {
+    container.innerHTML = "<p class=\"sem-dados\">Nenhum desvio neste mês.</p>";
+    return;
+  }
+  var total = desviosDisponiveis.length;
+
+  function construirPagina(qtd) {
+    var pagina = [];
+    for (var i = 0; i < qtd; i++) {
+      pagina.push(desviosDisponiveis[(paginaDesvioAtual + i) % total]);
+    }
+    return pagina;
+  }
+
+  var quantidade = total;
+  container.innerHTML = montarTabelaDesvios(construirPagina(quantidade));
+  while (quantidade > 1 && container.scrollHeight > container.clientHeight + 2) {
+    quantidade--;
+    container.innerHTML = montarTabelaDesvios(construirPagina(quantidade));
+  }
+  paginaDesvioAtual = (paginaDesvioAtual + quantidade) % total;
+}
+
+async function carregarStatusQualidade() {
+  try {
+    var resposta = await fetch("api/status");
+    var dados = await resposta.json();
+    montarPiramide(dados.status_dias || {});
+    desviosDisponiveis = dados.desvios || [];
+    if (paginaDesvioAtual >= desviosDisponiveis.length) { paginaDesvioAtual = 0; }
+    exibirPaginaDesvios();
+  } catch (e) {
+    console.error("Erro ao carregar status da qualidade", e);
+  }
+}
+
+/* ===================== Últimas notícias (RSS) — a cada 25s ===================== */
+var noticiasDisponiveis = [];
+var indiceNoticia = 0;
+
+function exibirNoticiaAtual() {
+  var container = document.getElementById("noticias-lista");
+  if (!noticiasDisponiveis.length) {
+    container.innerHTML = "<p class=\"sem-dados\">Nenhuma notícia cadastrada.</p>";
+    return;
+  }
+  var n = noticiasDisponiveis[indiceNoticia % noticiasDisponiveis.length];
+  var titulo = escaparHtml(n.titulo);
+  var linkAbre = n.link ? "<a href=\"" + n.link + "\" target=\"_blank\" rel=\"noopener\">" + titulo + "</a>" : titulo;
+  container.innerHTML = "<div class=\"noticia-item\">" + linkAbre + (n.resumo ? "<p>" + escaparHtml(n.resumo) + "</p>" : "") + "</div>";
+  indiceNoticia = (indiceNoticia + 1) % noticiasDisponiveis.length;
+}
+
+async function carregarNoticias() {
+  try {
+    var resposta = await fetch("api/noticias");
+    var dados = await resposta.json();
+    noticiasDisponiveis = dados.noticias || [];
+    if (indiceNoticia >= noticiasDisponiveis.length) { indiceNoticia = 0; }
+    exibirNoticiaAtual();
+  } catch (e) {
+    console.error("Erro ao carregar notícias", e);
+  }
+}
+
+/* ===================== Mural — a cada 30s ===================== */
+var muralItens = [];
+var muralIndice = 0;
+
+function exibirMuralAtual() {
+  var container = document.getElementById("mural-item");
+  if (!muralItens.length) {
+    container.innerHTML = "<p class=\"sem-dados\">Sem comunicados no momento.</p>";
+    return;
+  }
+  var item = muralItens[muralIndice % muralItens.length];
+  if (item.tipo === "imagem") {
+    container.className = "mural-item";
+    container.innerHTML = "<img src=\"uploads/mural/" + item.imagem_path + "\" alt=\"" + escaparHtml(item.titulo) +
+      "\" onerror=\"this.parentElement.innerHTML='<p class=&quot;titulo-mural&quot;>' + this.alt + '</p>';\">";
+  } else {
+    container.className = "mural-item sem-imagem";
+    container.innerHTML = "<p class=\"titulo-mural\">" + escaparHtml(item.titulo) + "</p><p>" + escaparHtml(item.conteudo) + "</p>";
+  }
+  muralIndice = (muralIndice + 1) % muralItens.length;
+}
+
+async function carregarMural() {
+  try {
+    var resposta = await fetch("api/mural");
+    var dados = await resposta.json();
+    muralItens = dados.mural || [];
+    if (muralIndice >= muralItens.length) { muralIndice = 0; }
+    exibirMuralAtual();
+  } catch (e) {
+    console.error("Erro ao carregar mural", e);
+  }
+}
+
+/* ===================== Indicadores — a cada 20s ===================== */
+var graficosIndicadores = [];
+var indicadoresDisponiveis = [];
+var indiceRotacaoIndicadores = 0;
+
+function inicializarGraficos() {
+  var cores = ["#163A6B", "#4CAF50", "#E8A93B"];
+  for (var i = 0; i < 3; i++) {
+    var ctx = document.getElementById("grafico-indicador-" + i).getContext("2d");
+    graficosIndicadores[i] = new Chart(ctx, {
+      type: "bar",
+      data: { labels: [], datasets: [{ label: "", data: [], backgroundColor: cores[i] }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: { title: { display: true, text: "", font: { size: 14 } }, legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+}
+
+function atualizarGraficoSlot(slot, indicador) {
+  var grafico = graficosIndicadores[slot];
+  if (!indicador) {
+    grafico.data.labels = [];
+    grafico.data.datasets[0].data = [];
+    grafico.options.plugins.title.text = "";
+    grafico.update();
+    return;
+  }
+  grafico.config.type = indicador.tipo === "linha" ? "line" : "bar";
+  grafico.data.labels = indicador.categorias;
+  grafico.data.datasets[0].data = indicador.valores;
+  grafico.data.datasets[0].label = indicador.nome;
+  grafico.options.plugins.title.text = indicador.nome;
+  grafico.update();
+}
+
+// Regra: nunca repete um indicador enquanto existir outro ainda não mostrado no ciclo.
+// Com 3 ou menos indicadores ativos, cada um ocupa seu próprio espaço (sem rotação, sem repetir);
+// os espaços que sobrarem ficam vazios. Só entra em rotação de fato com 4 ou mais.
+function atualizarIndicadoresSlots() {
+  var total = indicadoresDisponiveis.length;
+  if (total === 0) {
+    for (var i = 0; i < 3; i++) { atualizarGraficoSlot(i, null); }
+    return;
+  }
+  if (total <= 3) {
+    for (var i = 0; i < 3; i++) { atualizarGraficoSlot(i, indicadoresDisponiveis[i] || null); }
+    return;
+  }
+  for (var i = 0; i < 3; i++) {
+    atualizarGraficoSlot(i, indicadoresDisponiveis[(indiceRotacaoIndicadores + i) % total]);
+  }
+  indiceRotacaoIndicadores = (indiceRotacaoIndicadores + 3) % total;
+}
+
+async function carregarIndicadores() {
+  try {
+    var resposta = await fetch("api/indicadores");
+    var dados = await resposta.json();
+    indicadoresDisponiveis = dados.indicadores || [];
+    if (indiceRotacaoIndicadores >= indicadoresDisponiveis.length) { indiceRotacaoIndicadores = 0; }
+    atualizarIndicadoresSlots();
+  } catch (e) {
+    console.error("Erro ao carregar indicadores", e);
+  }
+}
+
+/* ===================== Em formulação — carregada uma vez (atualiza no refresh geral de 5min) ===================== */
+function montarProducao(producao, tanques) {
+  var el = document.getElementById("producao-conteudo");
+  if (!producao) {
+    el.innerHTML = "<p class=\"sem-dados\">Sem lançamento hoje.</p>";
+    return;
+  }
+  var linhasTanques = tanques.map(function (t) {
+    var produto = t.produto ? "<span class=\"tanque-produto\">" + escaparHtml(t.produto) + "</span>" : "";
+    return "<div class=\"tanque\"><span>" + t.tanque + "</span>" + produto + "<strong>" + t.valor_litros + " L</strong></div>";
+  }).join("");
+  el.innerHTML =
+    "<div class=\"producao-total\"><div><p class=\"rotulo\">Armazenamento utilizado</p><p class=\"valor\">" + producao.armazenamento_utilizado_litros + " L</p></div>" +
+    "<div><p class=\"rotulo\">Capacidade total</p><p class=\"valor\">" + producao.capacidade_total_litros + " L</p></div></div>" +
+    "<div class=\"producao-tanques\">" + linhasTanques + "</div>";
+}
+
+async function carregarEmFormulacao() {
+  try {
+    var resposta = await fetch("api/em-formulacao");
+    var dados = await resposta.json();
+    montarProducao(dados.producao, dados.producao_tanques || []);
+  } catch (e) {
+    console.error("Erro ao carregar em formulação", e);
+  }
+}
+
+/* ===================== Inicialização — cada componente com seu próprio intervalo ===================== */
+inicializarGraficos();
+
+carregarStatusQualidade();
+carregarNoticias();
+carregarMural();
+carregarIndicadores();
+carregarEmFormulacao();
+carregarClima();
+
+setInterval(carregarStatusQualidade, 35 * 1000);
+setInterval(carregarNoticias, 25 * 1000);
+setInterval(carregarMural, 30 * 1000);
+setInterval(carregarIndicadores, 20 * 1000);
+setInterval(carregarClima, 30 * 60 * 1000);
+
+// Refresh completo da página a cada 5 minutos — garante que qualquer coisa nova cadastrada em
+// qualquer painel apareça, mesmo que fuja do que os fetches acima já cobrem, e evita qualquer
+// acúmulo de memória de uma aba ficar dias abertas na TV (o reload reinicia tudo do zero).
+setInterval(function () {
+  window.location.reload();
+}, 5 * 60 * 1000);
