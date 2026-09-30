@@ -139,7 +139,7 @@ function exibirPaginaDesvios() {
 
 async function carregarStatusQualidade() {
   try {
-    var resposta = await fetch("api/status");
+    var resposta = await fetch("api/status", { cache: "no-store" });
     var dados = await resposta.json();
     montarPiramide(dados.status_dias || {});
     desviosDisponiveis = dados.desvios || [];
@@ -151,21 +151,23 @@ async function carregarStatusQualidade() {
   }
 }
 
-/* ===================== Últimas notícias (RSS) — a cada 25s ===================== */
+/* ===================== Últimas notícias (RSS) ===================== */
 var noticiasDisponiveis = [];
-var indiceNoticia = 0;
 
-function exibirNoticiaAtual() {
+function exibirNoticias() {
   var container = document.getElementById("noticias-lista");
   if (!noticiasDisponiveis.length) {
     container.innerHTML = "<p class=\"sem-dados\">Nenhuma notícia cadastrada.</p>";
     return;
   }
-  var n = noticiasDisponiveis[indiceNoticia % noticiasDisponiveis.length];
-  var titulo = escaparHtml(n.titulo);
-  var linkAbre = n.link ? "<a href=\"" + n.link + "\" target=\"_blank\" rel=\"noopener\">" + titulo + "</a>" : titulo;
-  container.innerHTML = "<div class=\"noticia-item-container\"><div class=\"noticia-item\">" + linkAbre + (n.resumo ? "<p>" + escaparHtml(n.resumo) + "</p>" : "") + "</div></div>";
-  indiceNoticia = (indiceNoticia + 1) % noticiasDisponiveis.length;
+
+  var itensHtml = noticiasDisponiveis.map(function(n) {
+    var titulo = escaparHtml(n.titulo);
+    var linkAbre = n.link ? "<a href=\"" + n.link + "\" target=\"_blank\" rel=\"noopener\">" + titulo + "</a>" : titulo;
+    return "<div class=\"noticia-item\">" + linkAbre + (n.resumo ? "<p>" + escaparHtml(n.resumo) + "</p>" : "") + "</div>";
+  }).join('<span style="margin: 0 30px; color: #ccc;">|</span>');
+
+  container.innerHTML = "<div class=\"noticia-item-container\">" + itensHtml + "</div>";
 }
 
 async function carregarNoticias() {
@@ -173,8 +175,7 @@ async function carregarNoticias() {
     var resposta = await fetch("api/noticias");
     var dados = await resposta.json();
     noticiasDisponiveis = dados.noticias || [];
-    if (indiceNoticia >= noticiasDisponiveis.length) { indiceNoticia = 0; }
-    exibirNoticiaAtual();
+    exibirNoticias();
   } catch (e) {
     console.error("Erro ao carregar notícias", e);
   }
@@ -352,9 +353,6 @@ carregarIndicadores();
 carregarEmFormulacao();
 carregarClima();
 
-setInterval(carregarStatusQualidade, 60 * 1000);
-setInterval(exibirPaginaDesvios, 30 * 1000);
-setInterval(exibirNoticiaAtual, 35 * 1000); // Roda a cada 35s, de acordo com o tempo da animação marquee no CSS
 setInterval(carregarNoticias, 5 * 60 * 1000); // Busca do feed apenas a cada 5 min
 setInterval(carregarMural, 30 * 1000);
 setInterval(carregarIndicadores, 20 * 1000);
@@ -367,6 +365,10 @@ setInterval(() => {
   secondsLeft = secondsLeft <= 1 ? 30 : secondsLeft - 1;
   if (timerElement) {
     timerElement.textContent = secondsLeft + 's';
+  }
+
+  if (secondsLeft === 30) {
+    carregarStatusQualidade();
   }
 }, 1000);
 
