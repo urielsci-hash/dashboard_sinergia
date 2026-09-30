@@ -16,6 +16,7 @@ exigirLogin();
   <header class="cabecalho">
     <div class="marca">
       <img src="assets/img/logo.png" alt="Sinergia Agro" class="logo">
+      <div class="separador-cabecalho"></div>
       <div>
         <h1>Painel de Qualidade</h1>
         <p>Gestão à vista &middot; Serra Negra/SP</p>
@@ -23,8 +24,8 @@ exigirLogin();
     </div>
     <div class="area-topo-direita">
       <div class="info-topo">
-        <div id="relogio" class="relogio">--:--:--</div>
         <div id="clima" class="clima">Carregando clima...</div>
+        <div id="relogio" class="relogio-box">--:--:--</div>
       </div>
     </div>
   </header>
@@ -32,7 +33,7 @@ exigirLogin();
   <main class="conteudo">
     <!-- Top row -->
     <section class="cartao cartao-status">
-      <div class="cabecalho-status">
+      <div class="cabecalho-status status-header-centered">
         <h2 class="titulo-cartao uppercase">Status da qualidade</h2>
         <span id="mes-ano-piramide" class="mes-ano-piramide badge-mes"></span>
       </div>
@@ -59,7 +60,7 @@ exigirLogin();
           <span class="badge-registros-ativos">Registros ativos</span>
         </div>
         <div class="desvios-refresh">
-          <span class="pulse-dot"></span> Atualiza em: <strong id="refresh-timer">5s</strong>
+          <span class="pulse-dot"></span> Atualiza em: <strong id="refresh-timer">30s</strong>
         </div>
       </div>
       <div id="lista-desvios" class="lista-desvios"></div>
