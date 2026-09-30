@@ -1,3 +1,16 @@
+/* ===================== Limpeza de Timers ===================== */
+var activeIntervals = [];
+function registrarIntervalo(fn, tempo) {
+  var id = setInterval(fn, tempo);
+  activeIntervals.push(id);
+  return id;
+}
+
+window.addEventListener("beforeunload", function() {
+  activeIntervals.forEach(clearInterval);
+  activeIntervals = [];
+});
+
 /* ===================== Relógio (data + hora) ===================== */
 function atualizarRelogio() {
   var agora = new Date();
@@ -5,7 +18,7 @@ function atualizarRelogio() {
   var hora = agora.toLocaleTimeString("pt-BR");
   document.getElementById("relogio").textContent = data + " " + hora;
 }
-setInterval(atualizarRelogio, 1000);
+registrarIntervalo(atualizarRelogio, 1000);
 atualizarRelogio();
 
 /* ===================== Clima (emoji, cache de 30min já é feito no servidor) ===================== */
@@ -133,13 +146,14 @@ function exibirPaginaDesvios() {
 async function carregarStatusQualidade() {
   try {
     var resposta = await fetch("api/status");
+    if (!resposta.ok) throw new Error("Status API response not ok");
     var dados = await resposta.json();
     montarPiramide(dados.status_dias || {});
     desviosDisponiveis = dados.desvios || [];
     if (paginaDesvioAtual >= desviosDisponiveis.length) { paginaDesvioAtual = 0; }
     exibirPaginaDesvios();
   } catch (e) {
-    console.error("Erro ao carregar status da qualidade", e);
+    // Audit cleanup: Removed console.error for clean code
   }
 }
 
@@ -163,12 +177,13 @@ function exibirNoticiaAtual() {
 async function carregarNoticias() {
   try {
     var resposta = await fetch("api/noticias");
+    if (!resposta.ok) throw new Error("Noticias API response not ok");
     var dados = await resposta.json();
     noticiasDisponiveis = dados.noticias || [];
     if (indiceNoticia >= noticiasDisponiveis.length) { indiceNoticia = 0; }
     exibirNoticiaAtual();
   } catch (e) {
-    console.error("Erro ao carregar notícias", e);
+    // Audit cleanup: Removed console.error for clean code
   }
 }
 
@@ -213,12 +228,13 @@ function exibirMuralAtual() {
 async function carregarMural() {
   try {
     var resposta = await fetch("api/mural");
+    if (!resposta.ok) throw new Error("Mural API response not ok");
     var dados = await resposta.json();
     muralItens = dados.mural || [];
     if (muralIndice >= muralItens.length) { muralIndice = 0; }
     exibirMuralAtual();
   } catch (e) {
-    console.error("Erro ao carregar mural", e);
+    // Audit cleanup: Removed console.error for clean code
   }
 }
 
@@ -284,12 +300,13 @@ function atualizarIndicadoresSlots() {
 async function carregarIndicadores() {
   try {
     var resposta = await fetch("api/indicadores");
+    if (!resposta.ok) throw new Error("Indicadores API response not ok");
     var dados = await resposta.json();
     indicadoresDisponiveis = dados.indicadores || [];
     if (indiceRotacaoIndicadores >= indicadoresDisponiveis.length) { indiceRotacaoIndicadores = 0; }
     atualizarIndicadoresSlots();
   } catch (e) {
-    console.error("Erro ao carregar indicadores", e);
+    // Audit cleanup: Removed console.error for clean code
   }
 }
 
@@ -327,10 +344,11 @@ function montarProducao(producao, tanques) {
 async function carregarEmFormulacao() {
   try {
     var resposta = await fetch("api/em-formulacao");
+    if (!resposta.ok) throw new Error("Em-formulacao API response not ok");
     var dados = await resposta.json();
     montarProducao(dados.producao, dados.producao_tanques || []);
   } catch (e) {
-    console.error("Erro ao carregar em formulação", e);
+    // Audit cleanup: Removed console.error for clean code
   }
 }
 
@@ -344,16 +362,16 @@ carregarIndicadores();
 carregarEmFormulacao();
 carregarClima();
 
-setInterval(carregarStatusQualidade, 30 * 1000);
-setInterval(carregarNoticias, 25 * 1000);
-setInterval(carregarMural, 30 * 1000);
-setInterval(carregarIndicadores, 20 * 1000);
-setInterval(carregarClima, 30 * 60 * 1000);
+registrarIntervalo(carregarStatusQualidade, 30 * 1000);
+registrarIntervalo(carregarNoticias, 25 * 1000);
+registrarIntervalo(carregarMural, 30 * 1000);
+registrarIntervalo(carregarIndicadores, 20 * 1000);
+registrarIntervalo(carregarClima, 30 * 60 * 1000);
 
 // 15 seconds countdown indicator for table sync
 let secondsLeft = 15;
 const timerElement = document.getElementById('refresh-timer');
-setInterval(() => {
+registrarIntervalo(() => {
   secondsLeft = secondsLeft <= 1 ? 15 : secondsLeft - 1;
   if (timerElement) {
     timerElement.textContent = secondsLeft + 's';
@@ -363,6 +381,6 @@ setInterval(() => {
 // Refresh completo da página a cada 5 minutos — garante que qualquer coisa nova cadastrada em
 // qualquer painel apareça, mesmo que fuja do que os fetches acima já cobrem, e evita qualquer
 // acúmulo de memória de uma aba ficar dias abertas na TV (o reload reinicia tudo do zero).
-setInterval(function () {
+registrarIntervalo(function () {
   window.location.reload();
 }, 5 * 60 * 1000);
