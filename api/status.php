@@ -24,14 +24,20 @@ foreach ($stmt->fetchAll() as $linha) {
     $statusPorDia[(int) date("j", strtotime($linha["data"]))] = $linha["status"];
 }
 
-// Desvios do mês, em ordem cronológica (para a rotação seguir sempre a mesma sequência),
-// já trazendo junto a observação mais recente lançada para aquele mesmo dia.
+// Desvios do mês (status atencao ou grave), em ordem cronológica (para a rotação seguir sempre a mesma sequência).
+// Agora lemos direto da tabela unificada status_qualidade_dia.
+// Precisamos trazer o registro *mais recente* de cada dia para saber se o desvio final daquele dia é válido.
 $stmt = $pdo->prepare("
-    SELECT d.data, d.descricao_desvio, d.acao_tomada, d.como_evitar,
-        (SELECT s.observacao FROM status_qualidade_dia s WHERE s.data = d.data ORDER BY s.criado_em DESC LIMIT 1) AS observacao
-    FROM desvios_qualidade d
-    WHERE d.data LIKE ?
-    ORDER BY d.data ASC, d.id ASC
+    SELECT s.data, s.desvio AS descricao_desvio, s.acao_tomada, s.como_evitar, s.observacao
+    FROM status_qualidade_dia s
+    INNER JOIN (
+        SELECT data, MAX(criado_em) AS max_criado
+        FROM status_qualidade_dia
+        WHERE data LIKE ?
+        GROUP BY data
+    ) max_s ON s.data = max_s.data AND s.criado_em = max_s.max_criado
+    WHERE s.status IN ('atencao', 'grave') AND s.desvio IS NOT NULL AND s.desvio != ''
+    ORDER BY s.data ASC, s.id ASC
 ");
 $stmt->execute([$mesAtual . "-%"]);
 $desvios = $stmt->fetchAll();

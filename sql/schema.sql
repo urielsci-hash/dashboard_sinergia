@@ -50,23 +50,13 @@ CREATE TABLE status_qualidade_dia (
   data DATE NOT NULL,
   status ENUM("ok","atencao","grave") NOT NULL,
   observacao VARCHAR(255) NULL,
+  desvio TEXT NULL,
+  acao_tomada TEXT NULL,
+  como_evitar TEXT NULL,
   usuario_id INT NOT NULL,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
   INDEX idx_status_data (data)
-);
-
--- Desvios (preenchidos quando um dia e marcado como "grave"). Podem ser editados/excluidos.
-CREATE TABLE desvios_qualidade (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  data DATE NOT NULL,
-  descricao_desvio TEXT NOT NULL,
-  acao_tomada TEXT NOT NULL,
-  como_evitar TEXT NOT NULL,
-  usuario_id INT NOT NULL,
-  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- "Em Formulacao": um lancamento por dia, com capacidade total informada manualmente e o
