@@ -23,13 +23,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $observacao = $_POST["observacao"] !== "" ? $_POST["observacao"] : null;
 
         // Sempre insere uma linha nova (nunca sobrescreve): preserva o histórico de observações.
-        $stmt = $pdo->prepare("INSERT INTO status_qualidade_dia (data, status, observacao, usuario_id) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$data, $status, $observacao, $_SESSION["usuario_id"]]);
+        $desvio = null;
+        $acao_tomada = null;
+        $como_evitar = null;
 
-        if ($status === "grave") {
-            $stmt = $pdo->prepare("INSERT INTO desvios_qualidade (data, descricao_desvio, acao_tomada, como_evitar, usuario_id) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$data, $_POST["desvio"], $_POST["acao_tomada"], $_POST["como_evitar"], $_SESSION["usuario_id"]]);
+        if ($status === "atencao" || $status === "grave") {
+            $desvio = $_POST["desvio"] !== "" ? $_POST["desvio"] : null;
+            $acao_tomada = $_POST["acao_tomada"] !== "" ? $_POST["acao_tomada"] : null;
+            $como_evitar = $_POST["como_evitar"] !== "" ? $_POST["como_evitar"] : null;
         }
+
+        $stmt = $pdo->prepare("INSERT INTO status_qualidade_dia (data, status, observacao, desvio, acao_tomada, como_evitar, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$data, $status, $observacao, $desvio, $acao_tomada, $como_evitar, $_SESSION["usuario_id"]]);
 
         registrarLog("qualidade", "Lançou o status de qualidade de um dia do mês");
         $mensagem = "Status do dia salvo.";
@@ -46,24 +51,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $pdo->prepare("DELETE FROM status_qualidade_dia WHERE id = ?")->execute([$_POST["id"]]);
         registrarLog("qualidade", "Excluiu um lançamento do histórico de status");
         $mensagem = "Lançamento do histórico excluído.";
-    } elseif (isset($_POST["atualizar_desvio"])) {
-        $stmt = $pdo->prepare("UPDATE desvios_qualidade SET descricao_desvio = ?, acao_tomada = ?, como_evitar = ? WHERE id = ?");
-        $stmt->execute([$_POST["descricao_desvio"], $_POST["acao_tomada"], $_POST["como_evitar"], $_POST["id"]]);
-
-        // A observação mora no lançamento de status do mesmo dia (não no desvio) — se o campo veio
-        // preenchido no formulário de edição, atualiza o registro de status mais recente daquele dia.
-        if (isset($_POST["observacao_do_dia"]) && $_POST["status_id_do_dia"] !== "") {
-            $observacaoDia = $_POST["observacao_do_dia"] !== "" ? $_POST["observacao_do_dia"] : null;
-            $pdo->prepare("UPDATE status_qualidade_dia SET observacao = ? WHERE id = ?")
-                ->execute([$observacaoDia, $_POST["status_id_do_dia"]]);
-        }
-
-        registrarLog("qualidade", "Editou um desvio de qualidade");
-        $mensagem = "Desvio atualizado.";
-    } elseif (isset($_POST["excluir_desvio"])) {
-        $pdo->prepare("DELETE FROM desvios_qualidade WHERE id = ?")->execute([$_POST["id"]]);
-        registrarLog("qualidade", "Excluiu um desvio de qualidade");
-        $mensagem = "Desvio excluído.";
     }
 }
 
@@ -90,30 +77,7 @@ $stmt = $pdo->prepare("SELECT sq.*, u.nome AS usuario_nome FROM status_qualidade
 $stmt->execute([$mesSelecionado . "-%"]);
 $historicoStatus = $stmt->fetchAll();
 
-$stmt = $pdo->prepare("SELECT * FROM desvios_qualidade WHERE data LIKE ? ORDER BY data DESC");
-$stmt->execute([$mesSelecionado . "-%"]);
-$desvios = $stmt->fetchAll();
-
 $historicoEmEdicao = null;
-if (!empty($_GET["editar_status"])) {
-    $stmt = $pdo->prepare("SELECT * FROM status_qualidade_dia WHERE id = ?");
-    $stmt->execute([$_GET["editar_status"]]);
-    $historicoEmEdicao = $stmt->fetch();
-}
-
-$desvioEmEdicao = null;
-$statusDoDiaDoDesvio = null;
-if (!empty($_GET["editar_desvio"])) {
-    $stmt = $pdo->prepare("SELECT * FROM desvios_qualidade WHERE id = ?");
-    $stmt->execute([$_GET["editar_desvio"]]);
-    $desvioEmEdicao = $stmt->fetch();
-
-    if ($desvioEmEdicao) {
-        $stmt = $pdo->prepare("SELECT * FROM status_qualidade_dia WHERE data = ? ORDER BY criado_em DESC LIMIT 1");
-        $stmt->execute([$desvioEmEdicao["data"]]);
-        $statusDoDiaDoDesvio = $stmt->fetch();
-    }
-}
 
 $tituloPagina = "Status da qualidade";
 require_once __DIR__ . "/../includes/layout_admin_topo.php";
@@ -174,88 +138,197 @@ require_once __DIR__ . "/../includes/layout_admin_topo.php";
 <script>
 function alternarCamposStatus() {
   var status = document.getElementById("campo-status").value;
-  document.getElementById("bloco-desvio").style.display = status === "grave" ? "block" : "none";
+  document.getElementById("bloco-desvio").style.display = (status === "atencao" || status === "grave") ? "block" : "none";
 }
 </script>
 
-<h2 style="margin-top:32px;">Histórico do mês</h2>
+<h2 style="margin-top:32px;">Histórico unificado do mês</h2>
 <p style="font-size:12px;color:#777;">Cada lançamento fica registrado — nada é sobrescrito, mesmo que o mesmo dia seja atualizado mais de uma vez. Use Editar só para corrigir um erro de digitação.</p>
 
-<?php if ($historicoEmEdicao): ?>
-<form class="formulario" method="post" style="margin-bottom:16px;">
-  <input type="hidden" name="id" value="<?= $historicoEmEdicao["id"] ?>">
-  <label>Lançamento de <?= date("d/m/Y H:i", strtotime($historicoEmEdicao["criado_em"])) ?> (<?= date("d/m/Y", strtotime($historicoEmEdicao["data"])) ?>)</label>
-  <select name="status">
-    <option value="ok" <?= $historicoEmEdicao["status"] === "ok" ? "selected" : "" ?>>Sem problema de qualidade</option>
-    <option value="atencao" <?= $historicoEmEdicao["status"] === "atencao" ? "selected" : "" ?>>Problema resolvido com ação imediata</option>
-    <option value="grave" <?= $historicoEmEdicao["status"] === "grave" ? "selected" : "" ?>>Problema grave</option>
-  </select>
-  <label>Observação</label>
-  <textarea name="observacao"><?= htmlspecialchars($historicoEmEdicao["observacao"] ?? "") ?></textarea>
-  <button type="submit" name="atualizar_status_historico" value="1">Salvar edição</button>
-</form>
-<?php endif; ?>
+<div id="historico-container">Carregando histórico...</div>
 
-<table class="tabela-simples">
-  <tr><th>Data</th><th>Status</th><th>Observação</th><th>Lançado por</th><th>Quando</th><th>Ações</th></tr>
-  <?php foreach ($historicoStatus as $h): ?>
-  <tr>
-    <td><?= date("d/m/Y", strtotime($h["data"])) ?></td>
-    <td><span class="status-pill status-<?= $h["status"] === "ok" ? "encerrado" : ($h["status"] === "atencao" ? "em_andamento" : "aberto") ?>"><?= $h["status"] ?></span></td>
-    <td><?= $h["observacao"] ? htmlspecialchars($h["observacao"]) : "—" ?></td>
-    <td><?= htmlspecialchars($h["usuario_nome"]) ?></td>
-    <td><?= date("d/m/Y H:i", strtotime($h["criado_em"])) ?></td>
-    <td class="acoes-linha">
-      <a href="?editar_status=<?= $h["id"] ?>&mes_num=<?= $mesSelecionadoNum ?>&ano=<?= $anoSelecionado ?>">Editar</a>
-      <form method="post" onsubmit="return confirm(&quot;Excluir este lançamento do histórico? Essa ação não pode ser desfeita.&quot;);" style="display:inline;">
-        <input type="hidden" name="id" value="<?= $h["id"] ?>">
-        <button type="submit" name="excluir_status_historico" value="1" class="botao-link-perigo">Excluir</button>
-      </form>
-    </td>
-  </tr>
-  <?php endforeach; ?>
-  <?php if (!$historicoStatus): ?><tr><td colspan="6">Nenhum registro neste mês.</td></tr><?php endif; ?>
-</table>
+<script>
+const mesSelecionado = "<?= $mesSelecionadoNum ?>";
+const anoSelecionado = "<?= $anoSelecionado ?>";
 
-<h2 style="margin-top:32px;">Desvios registrados no mês</h2>
+async function carregarHistorico() {
+  try {
+    const res = await fetch(`../api/qualidade/historico.php?mes=${mesSelecionado}&ano=${anoSelecionado}`);
+    const json = await res.json();
+    if (json.status === "sucesso") {
+      renderizarHistorico(json.dados);
+    } else {
+      document.getElementById("historico-container").innerText = "Erro ao carregar histórico: " + (json.mensagem || "");
+    }
+  } catch (err) {
+    document.getElementById("historico-container").innerText = "Erro ao carregar histórico.";
+  }
+}
+function formatarDataHora(str) {
+  if (!str) return "—";
+  const p = str.split(/[- :]/);
+  return `${p[2]}/${p[1]}/${p[0]} ${p[3]}:${p[4]}`;
+}
+function formatarData(str) {
+  if (!str) return "—";
+  const p = str.split("-");
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+function escapeHtml(unsafe) {
+  return (unsafe || "").toString()
+       .replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/'/g, "&#039;");
+}
 
-<?php if ($desvioEmEdicao): ?>
-<form class="formulario" method="post" style="margin-bottom:16px;">
-  <input type="hidden" name="id" value="<?= $desvioEmEdicao["id"] ?>">
-  <?php if ($statusDoDiaDoDesvio): ?>
-    <input type="hidden" name="status_id_do_dia" value="<?= $statusDoDiaDoDesvio["id"] ?>">
-  <?php else: ?>
-    <input type="hidden" name="status_id_do_dia" value="">
-  <?php endif; ?>
-  <label>Desvio (<?= date("d/m/Y", strtotime($desvioEmEdicao["data"])) ?>)</label>
-  <textarea name="descricao_desvio"><?= htmlspecialchars($desvioEmEdicao["descricao_desvio"]) ?></textarea>
-  <label>Ação tomada</label>
-  <textarea name="acao_tomada"><?= htmlspecialchars($desvioEmEdicao["acao_tomada"]) ?></textarea>
-  <label>Como evitar reincidência</label>
-  <textarea name="como_evitar"><?= htmlspecialchars($desvioEmEdicao["como_evitar"]) ?></textarea>
-  <label>Observação do dia<?= $statusDoDiaDoDesvio ? "" : " (nenhum lançamento de status encontrado para essa data — preencher aqui não vai salvar em lugar nenhum)" ?></label>
-  <textarea name="observacao_do_dia" <?= $statusDoDiaDoDesvio ? "" : "disabled" ?>><?= $statusDoDiaDoDesvio ? htmlspecialchars($statusDoDiaDoDesvio["observacao"] ?? "") : "" ?></textarea>
-  <button type="submit" name="atualizar_desvio" value="1">Salvar edição</button>
-</form>
-<?php endif; ?>
+function renderizarHistorico(dados) {
+  if (!dados || dados.length === 0) {
+    document.getElementById("historico-container").innerHTML = "<p>Nenhum registro neste mês.</p>";
+    return;
+  }
+  let html = `<table class="tabela-simples">
+    <tr>
+      <th>Data</th>
+      <th>Status</th>
+      <th>Desvio</th>
+      <th>Ação tomada</th>
+      <th>Como evitar reincidência</th>
+      <th>Observação</th>
+      <th>Lançado por</th>
+      <th>Quando</th>
+      <th>Ações</th>
+    </tr>`;
 
-<table class="tabela-simples">
-  <tr><th>Data</th><th>Desvio</th><th>Ação tomada</th><th>Como evitar reincidência</th><th>Ações</th></tr>
-  <?php foreach ($desvios as $d): ?>
-  <tr>
-    <td><?= date("d/m/Y", strtotime($d["data"])) ?></td>
-    <td><?= htmlspecialchars($d["descricao_desvio"]) ?></td>
-    <td><?= htmlspecialchars($d["acao_tomada"]) ?></td>
-    <td><?= htmlspecialchars($d["como_evitar"]) ?></td>
-    <td class="acoes-linha">
-      <a href="?editar_desvio=<?= $d["id"] ?>&mes_num=<?= $mesSelecionadoNum ?>&ano=<?= $anoSelecionado ?>">Editar</a>
-      <form method="post" onsubmit="return confirm(&quot;Excluir este desvio? Essa ação não pode ser desfeita.&quot;);" style="display:inline;">
-        <input type="hidden" name="id" value="<?= $d["id"] ?>">
-        <button type="submit" name="excluir_desvio" value="1" class="botao-link-perigo">Excluir</button>
-      </form>
-    </td>
-  </tr>
-  <?php endforeach; ?>
-  <?php if (!$desvios): ?><tr><td colspan="5">Nenhum desvio neste mês.</td></tr><?php endif; ?>
-</table>
+  dados.forEach(h => {
+    let classePill = "status-encerrado";
+    if (h.status === "atencao") classePill = "status-em_andamento";
+    if (h.status === "grave") classePill = "status-aberto";
+
+    html += `<tr>
+      <td>${formatarData(h.data)}</td>
+      <td><span class="status-pill ${classePill}">${escapeHtml(h.status)}</span></td>
+      <td>${h.status === "ok" || !h.desvio ? "—" : escapeHtml(h.desvio)}</td>
+      <td>${!h.acao_tomada ? "—" : escapeHtml(h.acao_tomada)}</td>
+      <td>${!h.como_evitar ? "—" : escapeHtml(h.como_evitar)}</td>
+      <td>${!h.observacao ? "—" : escapeHtml(h.observacao)}</td>
+      <td>${escapeHtml(h.usuario_nome)}</td>
+      <td>${formatarDataHora(h.criado_em)}</td>
+      <td class="acoes-linha">
+        <a href="#" onclick="editarRegistro(${h.id}, '${h.status}', '${escapeHtml(h.observacao).replace(/'/g, "\\'")}', '${escapeHtml(h.desvio).replace(/'/g, "\\'")}', '${escapeHtml(h.acao_tomada).replace(/'/g, "\\'")}', '${escapeHtml(h.como_evitar).replace(/'/g, "\\'")}', '${h.data}'); return false;">Editar</a>
+        <form method="post" onsubmit="excluirRegistro(event, ${h.id});" style="display:inline;">
+          <button type="submit" class="botao-link-perigo">Excluir</button>
+        </form>
+      </td>
+    </tr>`;
+  });
+  html += "</table>";
+  document.getElementById("historico-container").innerHTML = html;
+}
+
+function editarRegistro(id, status, observacao, desvio, acao, comoEvitar, data) {
+  document.getElementById("modal-edicao").style.display = "block";
+  document.getElementById("edit-id").value = id;
+  document.getElementById("edit-status").value = status;
+  document.getElementById("edit-observacao").value = observacao !== "null" ? observacao : "";
+  document.getElementById("edit-desvio").value = desvio !== "null" ? desvio : "";
+  document.getElementById("edit-acao").value = acao !== "null" ? acao : "";
+  document.getElementById("edit-como-evitar").value = comoEvitar !== "null" ? comoEvitar : "";
+  document.getElementById("edit-titulo").innerText = `Editando lançamento de ${formatarData(data)}`;
+  alternarCamposEdicao();
+  document.getElementById("modal-edicao").scrollIntoView({ behavior: 'smooth' });
+}
+
+function alternarCamposEdicao() {
+  const st = document.getElementById("edit-status").value;
+  document.getElementById("edit-bloco-desvio").style.display = (st === "atencao" || st === "grave") ? "block" : "none";
+}
+
+function fecharEdicao() {
+  document.getElementById("modal-edicao").style.display = "none";
+}
+
+async function salvarEdicao(event) {
+  event.preventDefault();
+  const id = document.getElementById("edit-id").value;
+  const status = document.getElementById("edit-status").value;
+  const observacao = document.getElementById("edit-observacao").value;
+  const desvio = document.getElementById("edit-desvio").value;
+  const acao_tomada = document.getElementById("edit-acao").value;
+  const como_evitar = document.getElementById("edit-como-evitar").value;
+
+  try {
+    const res = await fetch("../api/qualidade/historico.php", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status, observacao, desvio, acao_tomada, como_evitar })
+    });
+    const json = await res.json();
+    if (json.status === "sucesso") {
+      fecharEdicao();
+      carregarHistorico();
+      alert("Registro atualizado com sucesso.");
+    } else {
+      alert("Erro ao salvar: " + (json.mensagem || ""));
+    }
+  } catch(err) {
+    alert("Erro de conexão ao salvar.");
+  }
+}
+
+async function excluirRegistro(event, id) {
+  event.preventDefault();
+  if (!confirm("Excluir este lançamento do histórico? Essa ação não pode ser desfeita.")) return;
+  try {
+    const res = await fetch("../api/qualidade/historico.php", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    const json = await res.json();
+    if (json.status === "sucesso") {
+      carregarHistorico();
+      alert("Registro excluído.");
+    } else {
+      alert("Erro ao excluir: " + (json.mensagem || ""));
+    }
+  } catch(err) {
+    alert("Erro de conexão ao excluir.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", carregarHistorico);
+</script>
+
+<!-- Modal / Formulario Inline de Edição -->
+<div id="modal-edicao" style="display:none; border:1px solid #ddd; padding:16px; margin-bottom:16px; background:#f9f9f9; border-radius:8px;">
+  <form class="formulario" id="form-edicao" onsubmit="salvarEdicao(event)">
+    <input type="hidden" id="edit-id">
+    <label id="edit-titulo">Lançamento de ...</label>
+    <select id="edit-status" onchange="alternarCamposEdicao()">
+      <option value="ok">Sem problema de qualidade</option>
+      <option value="atencao">Problema resolvido com ação imediata</option>
+      <option value="grave">Problema grave</option>
+    </select>
+
+    <label>Observação</label>
+    <textarea id="edit-observacao"></textarea>
+
+    <div id="edit-bloco-desvio" style="display:none;">
+      <label>Desvio</label>
+      <textarea id="edit-desvio"></textarea>
+      <label>Ação tomada</label>
+      <textarea id="edit-acao"></textarea>
+      <label>Como evitar reincidência</label>
+      <textarea id="edit-como-evitar"></textarea>
+    </div>
+
+    <div style="display:flex; gap:16px;">
+      <button type="submit">Salvar edição</button>
+      <button type="button" onclick="fecharEdicao()" style="background:#888;">Cancelar</button>
+    </div>
+  </form>
+</div>
+
 <?php require_once __DIR__ . "/../includes/layout_admin_rodape.php"; ?>
