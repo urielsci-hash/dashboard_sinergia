@@ -126,14 +126,13 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 
 .painel { font-size: clamp(14px, 1vw, 18px); }
 
-.painel .cabecalho { padding: clamp(12px, 1.6vw, 26px) clamp(16px, 2.4vw, 40px); align-items: flex-start; }
-.painel .area-topo-direita { display: flex; flex-direction: column; align-items: flex-end; gap: clamp(6px, 0.8vw, 12px); }
+.painel .cabecalho { padding: clamp(12px, 1.6vw, 26px) clamp(16px, 2.4vw, 40px); align-items: center; justify-content: space-between; }
+.painel .area-topo-direita { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 24px); flex-direction: row; }
 .painel .logo { height: clamp(36px, 4vw, 60px); }
-.painel .cabecalho h1 { font-size: clamp(22px, 2.6vw, 40px); font-weight: 700; letter-spacing: .2px; }
-.painel .cabecalho p { font-size: clamp(12px, 1.1vw, 18px); }
-.painel .info-topo { gap: clamp(16px, 2.4vw, 40px); }
-.painel .relogio { font-size: clamp(18px, 2vw, 30px); font-weight: 600; }
-.painel .clima { font-size: clamp(14px, 1.3vw, 20px); }
+.painel .cabecalho h1 { font-size: clamp(18px, 2vw, 32px); font-weight: 700; letter-spacing: .2px; margin: 0; }
+.painel .cabecalho p { font-size: clamp(10px, 1vw, 14px); margin: 4px 0 0; }
+.painel .relogio { font-size: clamp(14px, 1.2vw, 20px); font-weight: 600; }
+.painel .clima { font-size: clamp(12px, 1.1vw, 18px); }
 
 .painel .conteudo { padding: clamp(12px, 1.6vw, 28px); padding-bottom: clamp(46px, 6vh, 80px); gap: clamp(12px, 1.4vw, 22px); }
 .painel .cartao { padding: clamp(14px, 1.6vw, 26px); border-radius: clamp(8px, 0.8vw, 14px); }
@@ -201,6 +200,11 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 .painel .rodape-noticias .noticias-lista { flex: 1; overflow: hidden; white-space: nowrap; }
 
 .painel .noticia-item { font-size: clamp(12px, 1.05vw, 15px); display: inline-block; vertical-align: middle; }
+.painel .noticia-item-container { display: inline-block; animation: marquee 35s linear infinite; }
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
 .painel .noticia-item a { color: var(--azul-marca); text-decoration: none; font-weight: 600; margin-right: 8px;}
 .painel .noticia-item a:hover { text-decoration: underline; }
 .painel .noticia-item p { display: inline; color: #666; font-size: 0.95em; }
@@ -208,8 +212,9 @@ body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); col
 /* Mural: se a imagem estiver quebrada, cai para exibir só o título (sem ícone de erro) */
 .painel .mural-item img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 .mural-item.sem-imagem { justify-content: center; }
-.cartao.cartao-mural.mural-fullscreen { padding: 0; border-radius: clamp(8px, 0.8vw, 14px); }
-.cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: cover; width: 100%; height: 100%; }
+.cartao.cartao-mural.mural-fullscreen { padding: 0; border-radius: clamp(8px, 0.8vw, 14px); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
+.cartao.cartao-mural.mural-fullscreen .mural-item { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: contain; width: 100%; height: 100%; display: block; margin: auto; }
 
 /* Em formulação: destaque maior para os números, layout vertical */
 .painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(10px, 1.4vw, 20px); }

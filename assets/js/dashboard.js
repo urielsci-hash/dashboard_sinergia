@@ -139,7 +139,7 @@ function exibirNoticiaAtual() {
   var n = noticiasDisponiveis[indiceNoticia % noticiasDisponiveis.length];
   var titulo = escaparHtml(n.titulo);
   var linkAbre = n.link ? "<a href=\"" + n.link + "\" target=\"_blank\" rel=\"noopener\">" + titulo + "</a>" : titulo;
-  container.innerHTML = "<div class=\"noticia-item\">" + linkAbre + (n.resumo ? "<p>" + escaparHtml(n.resumo) + "</p>" : "") + "</div>";
+  container.innerHTML = "<div class=\"noticia-item-container\"><div class=\"noticia-item\">" + linkAbre + (n.resumo ? "<p>" + escaparHtml(n.resumo) + "</p>" : "") + "</div></div>";
   indiceNoticia = (indiceNoticia + 1) % noticiasDisponiveis.length;
 }
 
